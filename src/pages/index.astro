@@ -1,0 +1,127 @@
+---
+import axios from "axios";
+import Layout from "../layouts/Layout.astro";
+import Card from "../components/Card.astro";
+const URI = import.meta.env.URI;
+
+const page = Number(Astro.url.searchParams.get("page")) || 1;
+const pageSize = 20;
+
+let products;
+let totalCount;
+
+try {
+  let res = await axios(`${URI}?page=${page}`);
+  products = res.data.data;
+  totalCount = res.data.totalCount;
+} catch (e) {
+  console.log(e);
+}
+
+const pageCount = Math.ceil(Number(totalCount) / pageSize) || 1;
+
+let paginationItems: String[] = [];
+
+// insert prev icon
+paginationItems.push(
+  `<li ><a class="cursor-pointer flex justify-center items-center w-9 h-9 ${
+    page <= 1 && "opacity-50 cursor-default select-none"
+  }" id='pagination-item' ${page > 1 && `href=?page=${page - 1}`}>
+    <img  src="/dropdown-icon.png" title="prev" height={20} width={20} loading='lazy' class="rotate-90" decoding='async' alt="prev button"/></a></li>`
+);
+
+for (let i = page - 3; i <= page + 3; i++) {
+  // if i is negative number then continue the for loop
+  if (i < 1) continue;
+  else if (i > pageCount) break; // if i is greater then pageCount then break the for loop
+
+  paginationItems.push(
+    ` <li ><a class="cursor-pointer flex justify-center items-center w-9 h-9 rounded-full hover:bg-blue-500 hover:text-white hover:shadow-lg ${
+      i === page && "bg-blue-500 text-white current"
+    }" id='pagination-item' href='?page=${i}'>${i}</a></li>`
+  );
+}
+
+// insert next icon
+paginationItems.push(
+  `<li ><a class="cursor-pointer flex justify-center items-center w-9 h-9  ${
+    page >= pageCount && "opacity-50 cursor-default select-none"
+  }" id='pagination-item' ${
+    page < pageCount && `href=?page=${page + 1}`
+  }> <img  src="/dropdown-icon.png" title="prev" height={20} width={20} loading='lazy' class="-rotate-90" decoding='async' alt="prev button"/></a></li>`
+);
+---
+
+<Layout title="Find your desire products">
+  <main class={`min-h-screen`}>
+    <section>
+      {/* products */}
+
+      <div class="mx-auto mt-5 w-[80%] md:w-[90%]">
+        <h1
+          id="all-post-title"
+          class="shadow-text ms-2 md:ms-20 text-5xl md:text-9xl max-h-[70px]"
+        >
+          All Products
+        </h1>
+      </div>
+
+      <div
+        class="content flex flex-wrap justify-center items-center my-10 mx-auto gap-4 md:gap-8 w-[90%]"
+      >
+        {products?.map((post: any) => <Card postData={post} />)}
+      </div>
+    </section>
+    <!-- pagination -->
+    <div
+      id="pagination"
+      class="pagination w-full flex justify-center items-center px-20 my-10"
+    >
+      <ul
+        class="flex gap-5 items-center pagination-ul"
+        data-pagecount={pageCount}
+        set:html={paginationItems}
+      />
+    </div>
+  </main>
+</Layout>
+
+<style lang="scss">
+  .heading-paragraph,
+  .hero-section-heading {
+    font-family: Gothic A1 !important;
+  }
+  .shadow-text {
+    color: #eeeeee;
+    font-family: Gothic A1 !important;
+    font-style: normal;
+    font-weight: 800;
+    line-height: normal;
+  }
+</style>
+
+<script defer>
+const searchInputBox = document.querySelector("#search-input");
+const searchIconBox = document.querySelector("#search-icon");
+
+searchInputBox.addEventListener("keyup", (e) => {
+  searchHandler(e);
+});
+searchIconBox.addEventListener("click", (e) => {
+  searchHandler(e);
+});
+
+//   searchHandler
+const searchHandler = (e) => {
+  if (e.keyCode === 13 || e.key === "Enter") {
+    let searchText = e.target.value.trim().toLowerCase();
+    if (searchText) open(`/blog/search?search=${searchText}`, "_self");
+  } else if (e.type === "click") {
+    let parentNodeItem = e.target.parentNode;
+    let searchInput = parentNodeItem.querySelector("#search-input");
+
+    searchInput = searchInput?.value?.trim().toLowerCase();
+    if (searchInput) open(`/blog/search?search=${searchInput}`, "_self");
+  }
+};
+</script>
